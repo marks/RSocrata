@@ -3,9 +3,6 @@
 # Author: Hugh J. Devlin, Ph. D. 2013-08-28
 ###############################################################################
 
-library('httr')       # for access to the HTTP header
-library('jsonlite')   # for parsing data types from Socrata
-library('mime')       # for guessing mime type
 
 #' Time-stamped message
 #'

@@ -5,9 +5,15 @@
 # Author: Hugh 2013-07-15
 ###############################################################################
 
+## GWL: Run this command to test:
+# runTestFile("R/tests/testRSocrata.R")
+
 library('RUnit')
 
 source("R/RSocrata.R")
+library(jsonlite)
+library(httr)
+library(mime)
 
 test.posixifyLong <- function() {
 	dt <- posixify("09/14/2012 10:38:01 PM")
