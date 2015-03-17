@@ -1,4 +1,5 @@
-#' Checks the validity of the syntax for a potential Socrata dataset Unique Identifier, also known as a 4x4.
+#' Checks the validity of the syntax for a potential Socrata dataset Unique 
+#' Identifier, also known as a 4x4.
 #'
 #' Will check the validity of a potential dataset unique identifier
 #' supported by Socrata. It will provide an exception if the syntax

@@ -9,10 +9,12 @@ getResponse <- function(url) {
     response <- GET(url)
     status <- http_status(response)
     if(response$status_code != 200) {
-        msg <- paste("Error in httr GET:", response$status_code, response$headers$statusmessage, url)
-        if(!is.null(response$headers$`content-length`) && (response$headers$`content-length` > 0)) {
+        msg <- paste("Error in httr GET:", response$status_code, 
+                     response$headers$statusmessage, url)
+        if(!is.null(response$headers$`content-length`) && 
+               (response$headers$`content-length` > 0)) {
             details <- content(response)
-            msg <- paste(msg, details$code[1], details$message[1])    
+            msg <- paste(msg, details$code[1], details$message[1])
         }
         logMsg(msg)
     }

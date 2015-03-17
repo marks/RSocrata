@@ -14,19 +14,23 @@
 validateUrl <- function(url, app_token) {
     url <- as.character(url)
     parsedUrl <- parse_url(url)
-    if(is.null(parsedUrl$scheme) | is.null(parsedUrl$hostname) | is.null(parsedUrl$path))
+    if(any(sapply(parsedUrl[c('scheme', 'hostname', 'path')], is.null))){
         stop(url, " does not appear to be a valid URL.")
-    if(!is.null(app_token)) { # Handles the addition of API token and resolves invalid uses
+    }
+    # Handle the addition of API token and resolve invalid uses:
+    if(!is.null(app_token)) { 
         if(is.null(parsedUrl$query[["$$app_token"]])) {
             token_inclusion <- "valid_use"
         } else {
             token_inclusion <- "already_included" }
         switch(token_inclusion,
                "already_included"={ # Token already included in url argument
-                   warning(url, " already contains an API token in url. Ignoring user-defined token.")
+                   warning(url, paste0(" already contains an API token in url.",
+                                       " Ignoring user-defined token."))
                },
                "valid_use"={ # app_token argument is used, not duplicative.
-                   parsedUrl$query[["app_token"]] <- as.character(paste("%24%24app_token=", app_token, sep=""))
+                   parsedUrl$query[["app_token"]] <- 
+                       as.character(paste0("%24%24app_token=", app_token))
                })
     } 
     if(substr(parsedUrl$path, 1, 9) == 'resource/') {

@@ -16,23 +16,31 @@
 #' @examples
 #' df <- read.socrata("http://soda.demo.socrata.com/resource/4334-bgaj.csv")
 read.socrata <- function(url, app_token = NULL) {
-    validUrl <- validateUrl(url, app_token) # check url syntax, allow human-readable Socrata url
+    ## check url syntax, allow human-readable Socrata url
+    validUrl <- validateUrl(url, app_token)
+    ## Parse URL
     parsedUrl <- parse_url(validUrl)
     mimeType <- guess_type(parsedUrl$path)
-    if(!(mimeType %in% c('text/csv','application/json')))
-        stop("Error in read.socrata: ", mimeType, " not a supported data format.")
+    if(!(mimeType %in% c('text/csv','application/json'))) {
+        stop("Error in read.socrata: ", mimeType, 
+             " not a supported data format.")
+    }
     response <- getResponse(validUrl)
     page <- getContentAsDataFrame(response)
     result <- page
     dataTypes <- getSodaTypes(response)
-    while (nrow(page) > 0) { # more to come maybe?
-        query <- paste(validUrl, if(is.null(parsedUrl$query)) {'?'} else {"&"}, '$offset=', nrow(result), sep='')
+    ## More to come? Loop over pages implicitly
+    while (nrow(page) > 0) { 
+        char <- if(is.null(parsedUrl$query)) {'?'} else {"&"}
+        query <- paste(validUrl, char, '$offset=', nrow(result), sep='')
         response <- getResponse(query)
         page <- getContentAsDataFrame(response)
         result <- rbind(result, page) # accumulate
     }    
     # convert Socrata calendar dates to posix format
-    for(columnName in colnames(page)[!is.na(dataTypes[fieldName(colnames(page))]) & dataTypes[fieldName(colnames(page))] == 'calendar_date']) {
+    for(columnName in colnames(page)[
+        !is.na(dataTypes[fieldName(colnames(page))]) & 
+            dataTypes[fieldName(colnames(page))] == 'calendar_date']) {
         result[[columnName]] <- posixify(result[[columnName]])
     }
     result
