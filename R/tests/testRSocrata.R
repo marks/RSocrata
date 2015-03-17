@@ -5,12 +5,10 @@
 # Author: Hugh 2013-07-15
 ###############################################################################
 
-## GWL: Run this command to test:
+## GWL: Reload library and run these commands to test:
+# library('RUnit')
 # runTestFile("R/tests/testRSocrata.R")
 
-library('RUnit')
-
-source("R/RSocrata.R")
 library(jsonlite)
 library(httr)
 library(mime)
