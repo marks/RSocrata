@@ -5,14 +5,17 @@
 # Author: Hugh 2013-07-15
 ###############################################################################
 
-## GWL: Reload library and run these commands to test:
-# runTestFile("R/tests/testRSocrata.R")
+## GWL: Steps to test:
+##    1) Build and reload library
+##    2) Run these commands:
+#
+# library('RUnit')
+# printTextProtocol(runTestFile("R/tests/testRSocrata.R"))
+# 
 
-library('RUnit')
-
-library(jsonlite)
-library(httr)
-library(mime)
+## Load RSocrata library for testing (should also load dependent libraries)
+## Note: Don't test locally loaded functions, test the library as built
+library(RSocrata)
 
 test.posixifyLong <- function() {
 	dt <- posixify("09/14/2012 10:38:01 PM")
@@ -103,11 +106,11 @@ test.readSocrataCalendarDateShort <- function() {
 }
 
 test.isFourByFour <- function() {
-	checkTrue(isFourByFour("4334-bgaj"), "ok")
-	checkTrue(!isFourByFour("4334c-bgajc"), "11 characters instead of 9")
-	checkTrue(!isFourByFour("433-bga"), "7 characters instead of 9")
-	checkTrue(!isFourByFour("433-bgaj"), "3 characters before dash instead of 4")
-	checkTrue(!isFourByFour("4334-!gaj"), "non-alphanumeric character")
+	checkTrue(RSocrata:::isFourByFour("4334-bgaj"), "ok")
+	checkTrue(!RSocrata:::isFourByFour("4334c-bgajc"), "11 characters instead of 9")
+	checkTrue(!RSocrata:::isFourByFour("433-bga"), "7 characters instead of 9")
+	checkTrue(!RSocrata:::isFourByFour("433-bgaj"), "3 characters before dash instead of 4")
+	checkTrue(!RSocrata:::isFourByFour("4334-!gaj"), "non-alphanumeric character")
 }
 
 test.isFourByFourUrl <- function() {
@@ -138,7 +141,7 @@ test.readAPIConflict <- function(){
   checkEquals(1007, nrow(df), "rows")
   checkEquals(9, ncol(df), "columns")
   # Check that function is calling the API token specified in url
-  checkTrue(substr(validateUrl('https://soda.demo.socrata.com/resource/4334-bgaj.csv?$$app_token=ew2rEMuESuzWPqMkyPfOSGJgE', app_token="ew2rEMuESuzWPqMkyPfOSUSER"), 70, 94)=="ew2rEMuESuzWPqMkyPfOSGJgE")
+  checkTrue(substr(RSocrata:::validateUrl('https://soda.demo.socrata.com/resource/4334-bgaj.csv?$$app_token=ew2rEMuESuzWPqMkyPfOSGJgE', app_token="ew2rEMuESuzWPqMkyPfOSUSER"), 70, 94)=="ew2rEMuESuzWPqMkyPfOSGJgE")
 }
 
 test.readAPIConflictHumanReadable <- function(){
@@ -146,7 +149,7 @@ test.readAPIConflictHumanReadable <- function(){
   checkEquals(1007, nrow(df), "rows")
   checkEquals(9, ncol(df), "columns")
   # Check that function is calling the API token specified in url
-  checkTrue(substr(validateUrl('https://soda.demo.socrata.com/dataset/USGS-Earthquake-Reports/4334-bgaj?$$app_token=ew2rEMuESuzWPqMkyPfOSGJgE', app_token="ew2rEMuESuzWPqMkyPfOSUSER"), 70, 94)=="ew2rEMuESuzWPqMkyPfOSGJgE")
+  checkTrue(substr(RSocrata:::validateUrl('https://soda.demo.socrata.com/dataset/USGS-Earthquake-Reports/4334-bgaj?$$app_token=ew2rEMuESuzWPqMkyPfOSGJgE', app_token="ew2rEMuESuzWPqMkyPfOSUSER"), 70, 94)=="ew2rEMuESuzWPqMkyPfOSGJgE")
 }
 
 test.incorrectAPIQuery <- function(){
