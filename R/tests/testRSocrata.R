@@ -6,8 +6,9 @@
 ###############################################################################
 
 ## GWL: Reload library and run these commands to test:
-# library('RUnit')
 # runTestFile("R/tests/testRSocrata.R")
+
+library('RUnit')
 
 library(jsonlite)
 library(httr)
