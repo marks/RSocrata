@@ -55,7 +55,7 @@ read.socrata <- function(url = NULL,
     colNames <- getColumnNames(urlParsed, mimeType)
     ## Compose the base url to be used for requests, before adding pageing info
     urlBase <- httr::build_url(urlParsed)
-    if(totalRequests>1){
+    if(totalRequests > 1){
         ## Now reply on constructed limit argument, so remove any previous limit
         ## specification from query (it's interger(0) if no limit arg present)
         limitArg <- grep("\\$limit", names(urlParsed$query), ignore.case = TRUE)
@@ -70,10 +70,24 @@ read.socrata <- function(url = NULL,
         urlFinal <- urlBase
     }
     resultRaw <- lapply(urlFinal, httr::GET)
+    # saveRDS(resultRaw, "resultRaw.Rds")
+    # resultRaw <- loadRDS("resultRaw.Rds")
     resultContent <- lapply(resultRaw, httr::content)
     resultContent <- do.call(c, resultContent)
-    resultContent <- unlistByName(resultContent)
-    resultContent
+    if(mimeType == "json"){
+        resultContent <- unlistByName(resultContent)
+    } else {
+        resultContent <- do.call(rbind, resultContent)
+    }
+    columnDataTypes <- getColumnDataTypes(urlParsed)
+    result <- data.frame(resultContent, stringsAsFactors = FALSE)
+    for(j in 1:ncol(result)){
+        # result[,j] <- type.convert(result[,j], as.is = TRUE)
+        switch(columnDataTypes[j],
+               number = {result[,j] <- as.numeric(result[,j])},
+               calendar_date = {result[,j] <- posixify(result[,j])})
+    }
+    return(result)
     
     # response <- getResponse(validUrl)
     # page <- getContentAsDataFrame(response)

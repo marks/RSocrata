@@ -190,10 +190,12 @@ test.lsSocrataInvalidURL <- function() {
 }
 
 test.getRowCount <- function() {
+    
     urls <- list("http://soda.demo.socrata.com/resource/4334-bgaj.csv",
                  "http://soda.demo.socrata.com/resource/4334-bgaj.json")
-    checkTrue(RSocrata::getRowCount(urls[[1]]) == 1007)
-    checkTrue(RSocrata::getRowCount(urls[[2]]) == 1007)
+    
+    checkTrue(getRowCount(urls[[1]], query = NULL) == 1007)
+    checkTrue(RSocrata:::getRowCount(urls[[2]]) == 1007)
 }
 
 

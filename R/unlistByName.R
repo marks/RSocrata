@@ -1,7 +1,7 @@
 
 
 
-unlistByName <- function(dat, convertTypes=TRUE) {
+unlistByName <- function(dat) {
     ## Use this example record to create a list of "master names"
     MasterNames <- unique(names(unlist(dat, recursive = T)))
     MasterNames
@@ -18,11 +18,6 @@ unlistByName <- function(dat, convertTypes=TRUE) {
         result[i, ] <- unname(unlist(dat[[i]], recursive = TRUE)[MasterNames])
     }
     
-    if(convertTypes){
-        ## Note, as.is == TRUE to avoid factor conversions
-        result <- data.frame(apply(result, 2, type.convert, as.is=TRUE), 
-                             stringsAsFactors=FALSE)
-    }
     return(result)
 }
 
