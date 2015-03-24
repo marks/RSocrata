@@ -189,6 +189,14 @@ test.lsSocrataInvalidURL <- function() {
     checkException(read.socrata("a.fake.url.being.tested"), "invalid url")
 }
 
+test.getRowCount <- function() {
+    urls <- list("http://soda.demo.socrata.com/resource/4334-bgaj.csv",
+                 "http://soda.demo.socrata.com/resource/4334-bgaj.json")
+    checkTrue(RSocrata::getRowCount(urls[[1]]) == 1007)
+    checkTrue(RSocrata::getRowCount(urls[[2]]) == 1007)
+}
+
+
 test.suite <- defineTestSuite("test Socrata SODA interface",
                               dirs = file.path("R/tests"),
                               testFileRegexp = '^test.*\\.R')
@@ -202,3 +210,6 @@ runAllTestsCI <- function() { # Ran for continuous integration tests, will stop 
   test.result <- runTestSuite(test.suite)
   if(getErrors(test.result)$nErr > 0 | getErrors(test.result)$nFail > 0) stop("TEST HAD ERRORS!")
 }
+
+
+

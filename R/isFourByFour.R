@@ -10,10 +10,13 @@
 #' @author Tom Schenk Jr \email{tom.schenk@@cityofchicago.org}
 isFourByFour <- function(fourByFour) {
     fourByFour <- as.character(fourByFour)
-    if(nchar(fourByFour) != 9)
-        return(FALSE)
-    if(regexpr("[[:alnum:]]{4}-[[:alnum:]]{4}", fourByFour) == -1)
-        return(FALSE)
-    TRUE    
+    result <- TRUE
+    if(nchar(fourByFour) != 9){
+        result <- FALSE
+    }
+    if(regexpr("[[:alnum:]]{4}-[[:alnum:]]{4}", fourByFour) == -1){
+        result <- FALSE
+    }
+    return(result)    
 }
 
