@@ -22,10 +22,10 @@ getColumnNames <- function(urlParsed, mimeType){
     result <- httr::content(httr::GET(httr::build_url(colUrl)))
     if(mimeType=="json"){
         ## Extract JSON names 
-        result <- sapply(result[[28]], function(x) x[['fieldName']])
+        result <- sapply(result[["columns"]], function(x) x[["fieldName"]])
     } else {
         ## Extract CSV names
-        result <- sapply(result[[28]], function(x) x[['name']])
+        result <- sapply(result[["columns"]], function(x) x[["name"]])
     }
     return(result)
 }

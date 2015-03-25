@@ -8,6 +8,6 @@ getColumnDataTypes <- function(urlParsed){
                         class = "url")
     result <- httr::content(httr::GET(httr::build_url(colUrl)))
     ## Extract JSON names 
-    result <- sapply(result[[28]], function(x) x[['renderTypeName']])
+    result <- sapply(result[["columns"]], function(x) x[["renderTypeName"]])
     return(result)
 }

@@ -23,7 +23,8 @@ read.socrata <- function(url = NULL,
                          query = NULL,
                          apptoken = NULL,
                          pagesize = 50000,
-                         keyfield = NULL) {
+                         keyfield = NULL,
+                         useCluster = FALSE) {
     ##--------------------------------------------------------------------------
     ## Construct urlParsed from user input
     ##--------------------------------------------------------------------------
@@ -51,17 +52,17 @@ read.socrata <- function(url = NULL,
     totalRows <- getQueryRowCount(urlParsed, mimeType)
     ## Calculate total requests    
     totalRequests <- trunc(totalRows / pagesize) + 1
+    ## Rely on constructed limit argument, so remove any previous limit
+    ## specification from query (it's interger(0) if no limit arg present)
+    limitArg <- grep("\\$limit", names(urlParsed$query), ignore.case = TRUE)
+    if(length(limitArg) > 0){
+        urlParsed$query[[limitArg]] <- NULL
+    }
     ## Get column names from 1 row of CSV download
     colNames <- getColumnNames(urlParsed, mimeType)
     ## Compose the base url to be used for requests, before adding pageing info
     urlBase <- httr::build_url(urlParsed)
     if(totalRequests > 1){
-        ## Now reply on constructed limit argument, so remove any previous limit
-        ## specification from query (it's interger(0) if no limit arg present)
-        limitArg <- grep("\\$limit", names(urlParsed$query), ignore.case = TRUE)
-        if(length(limitArg) > 0){
-            urlParsed$query[[limitArg]] <- NULL
-        }
         ## Get "urlFinal" which is actually several URLs that have the 
         ## $offset, $limit, and $order arguments embedded
         urlFinal <- getPagedQueries(urlBase, totalRows, pagesize, colNames, 
@@ -69,43 +70,67 @@ read.socrata <- function(url = NULL,
     } else {
         urlFinal <- urlBase
     }
-    resultRaw <- lapply(urlFinal, httr::GET)
+    ## Download data, in parallel if requested
+    if(useCluster){
+        require(parallel)
+        cl <- makeCluster(detectCores())
+        resultRaw <- parLapply(cl, urlFinal, httr::GET)
+        stopCluster(cl)
+    } else {
+        resultRaw <- lapply(urlFinal, httr::GET)
+    }
+    ## Temp code for loading intermediate results
     # saveRDS(resultRaw, "resultRaw.Rds")
     # resultRaw <- loadRDS("resultRaw.Rds")
+    
+    ## Extract content, and merge into one list
     resultContent <- lapply(resultRaw, httr::content)
     resultContent <- do.call(c, resultContent)
+    ## Put results into matrix table form
     if(mimeType == "json"){
         resultContent <- unlistByName(resultContent)
     } else {
         resultContent <- do.call(rbind, resultContent)
     }
-    columnDataTypes <- getColumnDataTypes(urlParsed)
     result <- data.frame(resultContent, stringsAsFactors = FALSE)
-    for(j in 1:ncol(result)){
-        # result[,j] <- type.convert(result[,j], as.is = TRUE)
-        switch(columnDataTypes[j],
-               number = {result[,j] <- as.numeric(result[,j])},
-               calendar_date = {result[,j] <- posixify(result[,j])})
+    ## Reorder according to column names (put extra columns at end)
+    colNamesMatched <- colnames(result)[colnames(result) %in% colNames]
+    colNamesNotMatched <- colnames(result)[!colnames(result) %in% colNames]
+    colNamesOrdered <- colNamesMatched[match(colNames, colNamesMatched)]
+    colNamesOrdered <- colNamesOrdered[!is.na(colNamesOrdered)]
+    colNamesResult <- c(colNamesOrdered, colNamesNotMatched)
+    result <- result[, colNamesResult]
+    
+    ## Convert data types for result
+    columnDataTypes <- getColumnDataTypes(urlParsed)
+    numberColumns <- colNames[which(columnDataTypes == "number")]
+    dateColumns <- colNames[which(columnDataTypes == "calendar_date")]
+    for(j in numberColumns[numberColumns %in% colnames(result)]){
+        result[,j] <- as.numeric(result[,j])
+    }
+    for(j in dateColumns[dateColumns %in% colnames(result)]){
+        result[,j] <- as.POSIXct(result[,j])
     }
     return(result)
+}
+
+if(FALSE){
+    ## Some test examples:
+    rm(list=ls())
+    geneorama::sourceDir("R/")
     
-    # response <- getResponse(validUrl)
-    # page <- getContentAsDataFrame(response)
-    # result <- page
-    # dataTypes <- getSodaTypes(response)
-    # ## More to come? Loop over pages implicitly
-    # while (nrow(page) > 0) { 
-    #     char <- if(is.null(urlParsed$query)) {'?'} else {"&"}
-    #     query <- paste(validUrl, char, '$offset=', nrow(result), sep='')
-    #     response <- getResponse(query)
-    #     page <- getContentAsDataFrame(response)
-    #     result <- rbind(result, page) # accumulate
-    # }
-    # # convert Socrata calendar dates to posix format
-    # for(columnName in colnames(page)[
-    #     !is.na(dataTypes[fieldName(colnames(page))]) & 
-    #         dataTypes[fieldName(colnames(page))] == 'calendar_date']) {
-    #     result[[columnName]] <- posixify(result[[columnName]])
-    # }
-    # result
+    url <- NULL
+    hostname = "banannas://data.cityofchicago.org"
+    ## Small number of records (1 request)
+    #query = "?application_type=RENEW&license_description=Limited Business License&zip_code=60622"
+    ## Big request (16 requests)
+    # query = "?application_type=RENEW&license_description=Limited Business License"
+    ## Testing the limit arg
+    query = "?application_type=RENEW&license_description=Limited Business License&$limit=62000"
+    resourcePath = "AnyRandomName/r5kz-chrr.json"
+    apptoken = "bjp8KrRvAPtuf809u1UXnI0Z8"
+    pagesize = 50000
+    keyfield = "id"
+    # keyfield = NULL
+    useCluster
 }
