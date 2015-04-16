@@ -58,79 +58,71 @@ read.socrata <- function(url = NULL,
     if(length(limitArg) > 0){
         urlParsed$query[[limitArg]] <- NULL
     }
-    ## Get column names from 1 row of CSV download
-    colNames <- getColumnNames(urlParsed, mimeType)
+    ## Get column names from the views resource path
+    colInfo <- getColumnInfo(urlParsed)
     ## Compose the base url to be used for requests, before adding pageing info
     urlBase <- httr::build_url(urlParsed)
     if(totalRequests > 1){
         ## Get "urlFinal" which is actually several URLs that have the 
         ## $offset, $limit, and $order arguments embedded
-        urlFinal <- getPagedQueries(urlBase, totalRows, pagesize, colNames, 
-                                    keyfield)
+        urlFinal <- getPagedQueries(urlBase, totalRows, pagesize, 
+                                    colInfo$fieldName, keyfield, totalRequests)
     } else {
         urlFinal <- urlBase
     }
+    ##------------------------------------------------------------------------
     ## Download data, in parallel if requested
+    ##------------------------------------------------------------------------
     if(useCluster){
         require(parallel)
         cl <- makeCluster(detectCores())
         resultRaw <- parLapply(cl, urlFinal, httr::GET)
         stopCluster(cl)
     } else {
-        resultRaw <- lapply(urlFinal, httr::GET)
+        ## The subsequent code is equivalent to this:
+        # resultRaw <- lapply(urlFinal, httr::GET)
+        
+        ## Get raw results in more detail, with timings:
+        resultRaw <- list()
+        resultRawTimingDetail <- list()
+        for(u in urlFinal){
+            resultRawTimingDetail[[u]] <- system.time(
+                resultRaw[[u]] <- httr::GET(u)
+            )
+            print(u)
+            print(resultRawTimingDetail[[u]])
+        }
     }
-    ## Temp code for loading intermediate results
-    # saveRDS(resultRaw, "resultRaw.Rds")
-    # resultRaw <- loadRDS("resultRaw.Rds")
     
-    ## Extract content, and merge into one list
-    resultContent <- lapply(resultRaw, httr::content)
-    resultContent <- do.call(c, resultContent)
-    ## Put results into matrix table form
+    ## Extract content
+    resultContent <- list()
+    for(i in 1:length(resultRaw)){
+        print(i)
+        #resultRaw[[i]] <- httr::content(resultRaw[[i]])
+        resultContent[[i]] <- httr::content(resultRaw[[i]])
+    }
+    
+    ## Combine content
     if(mimeType == "json"){
-        resultContent <- unlistByName(resultContent)
+        ## Merge extracted content
+        resultContent <- do.call(c, resultContent)
+        ## Put results into matrix table form
+        resultContent <- unlistByName(resultContent, colInfo, mimeType)
     } else {
         resultContent <- do.call(rbind, resultContent)
     }
     result <- data.frame(resultContent, stringsAsFactors = FALSE)
-    ## Reorder according to column names (put extra columns at end)
-    colNamesMatched <- colnames(result)[colnames(result) %in% colNames]
-    colNamesNotMatched <- colnames(result)[!colnames(result) %in% colNames]
-    colNamesOrdered <- colNamesMatched[match(colNames, colNamesMatched)]
-    colNamesOrdered <- colNamesOrdered[!is.na(colNamesOrdered)]
-    colNamesResult <- c(colNamesOrdered, colNamesNotMatched)
-    result <- result[, colNamesResult]
     
     ## Convert data types for result
     columnDataTypes <- getColumnDataTypes(urlParsed)
-    numberColumns <- colNames[which(columnDataTypes == "number")]
-    dateColumns <- colNames[which(columnDataTypes == "calendar_date")]
-    for(j in numberColumns[numberColumns %in% colnames(result)]){
+    numberColumns <- which(colInfo$renderTypeName == "number")
+    dateColumns <- which(colInfo$renderTypeName == "calendar_date")
+    for(j in numberColumns){
         result[,j] <- as.numeric(result[,j])
     }
-    for(j in dateColumns[dateColumns %in% colnames(result)]){
+    for(j in dateColumns){
         result[,j] <- as.POSIXct(result[,j])
     }
     return(result)
 }
 
-if(FALSE){
-    ## Some test examples:
-    rm(list=ls())
-    geneorama::sourceDir("R/")
-    
-    url <- NULL
-    hostname = "banannas://data.cityofchicago.org"
-    ## Small number of records (1 request)
-    #query = "?application_type=RENEW&license_description=Limited Business License&zip_code=60622"
-    ## Big request (16 requests)
-    # query = "?application_type=RENEW&license_description=Limited Business License"
-    ## Testing the limit arg
-    query = "?application_type=RENEW&license_description=Limited Business License&$limit=62000"
-    resourcePath = "AnyRandomName/r5kz-chrr.json"
-    apptoken = "bjp8KrRvAPtuf809u1UXnI0Z8"
-    pagesize = 50000
-    keyfield = "id"
-    # keyfield = NULL
-    useCluster
-}
