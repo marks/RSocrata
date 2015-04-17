@@ -114,7 +114,6 @@ read.socrata <- function(url = NULL,
     result <- data.frame(resultContent, stringsAsFactors = FALSE)
     
     ## Convert data types for result
-    columnDataTypes <- getColumnDataTypes(urlParsed)
     numberColumns <- which(colInfo$renderTypeName == "number")
     dateColumns <- which(colInfo$renderTypeName == "calendar_date")
     for(j in numberColumns){
