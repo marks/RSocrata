@@ -88,10 +88,10 @@ read.socrata <- function(url = NULL,
         for(u in urlFinal){
             cat("httr::GET call for request ", which(u==urlFinal), " of ", 
                 totalRequests, "\n")
+            print(u)
             resultRawTimingDetail[[u]] <- system.time(
                 resultRaw[[u]] <- httr::GET(u)
             )
-            print(u)
             print(resultRawTimingDetail[[u]])
         }
     }
@@ -101,7 +101,9 @@ read.socrata <- function(url = NULL,
     for(i in 1:length(resultRaw)){
         cat("httr::content call for request ", i, " of ", totalRequests, "\n")
         #resultRaw[[i]] <- httr::content(resultRaw[[i]])
-        resultContent[[i]] <- httr::content(resultRaw[[i]])
+        print(system.time(
+            resultContent[[i]] <- httr::content(resultRaw[[i]])
+        ))
     }
     
     ## Combine content
@@ -121,12 +123,16 @@ read.socrata <- function(url = NULL,
     for(j in numberColumns){
         cat("Converting ", which(j==numberColumns), "th column of ", 
             length(numberColumns), " numeric columns\n")
-        result[,j] <- as.numeric(result[,j])
+        result[ , j] <- as.numeric(result[ , j])
     }
     for(j in dateColumns){
         cat("Converting ", which(j==dateColumns), "th column of ", 
             length(dateColumns), " date columns\n")
-        result[,j] <- as.POSIXct(result[,j])
+        if(mimeType=="json"){
+            result[ , j] <- as.POSIXct(result[ , j])
+        } else {
+            result[ , j] <- as.POSIXct(strptime(result[ , j], "%m/%d/%Y"))
+        }
     }
     return(result)
 }
