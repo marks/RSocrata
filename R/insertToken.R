@@ -2,34 +2,30 @@
 
 insertToken <- function(query, 
                         apptoken = NULL, 
-                        url) {
+                        urlParsed) {
     
     if(!is.null(apptoken)){
-        ##----------------------------------------------------------------------
-        ## Handle the insertion of the API token into the query, if it exists
-        ##----------------------------------------------------------------------
+        ## If there is no query at all, create a base
+        if(is.null(query)){
+            query  <- list()
+        }
         ## Convert to character, just in case
         apptoken <- as.character(apptoken)
-        if(is.null(query["$$app_token"][[1]]) && !is.null(apptoken)) { 
-            ## The user supplied an apptoken only through apptoken, so add
-            ## apptoken to the query
-            # query[['app_token']] <- as.character(paste0("%24%24app_token=", apptoken))
-            query[["$$app_token"]] <- apptoken
-        } else {
-            ## The user supplied apptoken, there was already one in the query 
-            ## and they don't match.
-            if(query[["$$app_token"]] != apptoken){
-                msg <- paste0("url = ", httr::build_url(url), "\n",
-                              "The supplied url has an API token embedded in ",
-                              "it, and the embedded token (",
-                              query[['$$app_token']], ") does not match the ",
-                              "supplied apptoken (", apptoken ,").\n",
-                              "Using apptoken.")
-                warning(msg)
-                ## query[['$$app_token']] <- as.character(paste0("%24%24app_token=", apptoken))
-                query[["$$app_token"]] <- apptoken
-            }
+        ## If the user supplied apptoken as an argument, and there was already 
+        ## one in the query, and they don't match, then warn
+        queryHasAppToken <- !is.null(query["$$app_token"][[1]])
+        if(queryHasAppToken && query[["$$app_token"]] != apptoken){
+            msg <- paste0("url = ", httr::build_url(urlParsed), "\n",
+                          "The supplied url has an API token embedded in ",
+                          "it, and the embedded token (",
+                          query[['$$app_token']], ") does not match the ",
+                          "supplied apptoken (", apptoken ,").\n",
+                          "Using apptoken.")
+            warning(msg)
         }
+        
+        ## Insert apptoken into the query (even if it already exists)
+        query[["$$app_token"]] <- apptoken
     }
     return(query)
 }

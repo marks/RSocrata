@@ -39,7 +39,9 @@ read.socrata <- function(url = NULL,
         urlParsed <- getUrl(hostname, resourcePath, query)
     }
     ## Insert token into query part of url
-    urlParsed$query <- insertToken(urlParsed$query, apptoken, urlParsed)
+    urlParsed$query <- insertToken(query = urlParsed$query,
+                                   apptoken = apptoken,
+                                   urlParsed = urlParsed)
     ## Get the mimeType from the input
     mimeType <- getResourcePath(urlParsed$path)$mimeType
     ## Check url for minimum completeness
