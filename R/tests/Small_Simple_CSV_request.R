@@ -15,14 +15,25 @@ geneorama::sourceDir("R/")
 system.time(
     dat <- read.socrata(url = NULL,
                         hostname = "httttp://data.cityofchicago.org",
-                        resourcePath = "AnyRandomName/r5kz-chrr.json",
-                        query = "?application_type=RENEW&license_description=Limited Business License",
-                        apptoken = "bjp8KrRvAPtuf809u1UXnI0Z8",
+                        resourcePath = "Administration-Finance/Current-Employee-Names-Salaries-and-Position-Title/xzkq-xp2w.csv",
+                        query = NULL,
+                        apptoken = NULL,
                         pagesize = 50000,
-                        keyfield = "id",
+                        keyfield = NULL,
                         useCluster = FALSE)
 )
-## Check the structure
+str(dat)
+
+system.time(
+    dat <- read.socrata(url = NULL,
+                        hostname = "httttp://data.cityofchicago.org",
+                        resourcePath = "Administration-Finance/Current-Employee-Names-Salaries-and-Position-Title/xzkq-xp2w.csv",
+                        query = "?$LimiT=100",
+                        apptoken = NULL,
+                        pagesize = 50000,
+                        keyfield = NULL,
+                        useCluster = FALSE)
+)
 str(dat)
 
 ## Turn off the profiler

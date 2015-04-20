@@ -56,20 +56,18 @@ read.socrata <- function(url = NULL,
     ## specification from query (it's interger(0) if no limit arg present)
     limitArg <- grep("\\$limit", names(urlParsed$query), ignore.case = TRUE)
     if(length(limitArg) > 0){
-        urlParsed$query[[limitArg]] <- NULL
+        urlParsed[["query"]][[limitArg]] <- NULL
+    }
+    ## If there is nothing in the query then set the query of the url to NULL
+    if(length(urlParsed[["query"]]) == 0){
+        urlParsed[["query"]] <- NULL
     }
     ## Get column names from the views resource path
     colInfo <- getColumnInfo(urlParsed)
-    ## Compose the base url to be used for requests, before adding pageing info
-    urlBase <- httr::build_url(urlParsed)
-    if(totalRequests > 1){
-        ## Get "urlFinal" which is actually several URLs that have the 
-        ## $offset, $limit, and $order arguments embedded
-        urlFinal <- getPagedQueries(urlBase, totalRows, pagesize, 
-                                    colInfo$fieldName, keyfield, totalRequests)
-    } else {
-        urlFinal <- urlBase
-    }
+    ## Get "urlFinal" which is actually several URLs that have the 
+    ## $offset, $limit, and $order arguments embedded
+    urlFinal <- getPagedQueries(urlParsed, totalRows, pagesize, 
+                                colInfo$fieldName, keyfield, totalRequests)
     ##------------------------------------------------------------------------
     ## Download data, in parallel if requested
     ##------------------------------------------------------------------------
@@ -86,6 +84,8 @@ read.socrata <- function(url = NULL,
         resultRaw <- list()
         resultRawTimingDetail <- list()
         for(u in urlFinal){
+            cat("httr::GET call for request ", which(u==urlFinal), " of ", 
+                totalRequests, "\n")
             resultRawTimingDetail[[u]] <- system.time(
                 resultRaw[[u]] <- httr::GET(u)
             )
@@ -97,7 +97,7 @@ read.socrata <- function(url = NULL,
     ## Extract content
     resultContent <- list()
     for(i in 1:length(resultRaw)){
-        print(i)
+        cat("httr::content call for request ", i, " of ", totalRequests, "\n")
         #resultRaw[[i]] <- httr::content(resultRaw[[i]])
         resultContent[[i]] <- httr::content(resultRaw[[i]])
     }
@@ -117,9 +117,13 @@ read.socrata <- function(url = NULL,
     numberColumns <- which(colInfo$renderTypeName == "number")
     dateColumns <- which(colInfo$renderTypeName == "calendar_date")
     for(j in numberColumns){
+        cat("Converting ", which(j==numberColumns), "th column of ", 
+            length(numberColumns), " numeric columns\n")
         result[,j] <- as.numeric(result[,j])
     }
     for(j in dateColumns){
+        cat("Converting ", which(j==dateColumns), "th column of ", 
+            length(dateColumns), " date columns\n")
         result[,j] <- as.POSIXct(result[,j])
     }
     return(result)

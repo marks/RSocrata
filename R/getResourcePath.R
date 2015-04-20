@@ -11,10 +11,10 @@
 #' 
 #' @description Extracts a Socrata dataset Unique Identifier, also known as a 
 #'              4x4, and parses the data type requested by the user, if it 
-#'              exists.  If the user has not specifiied a data type, the 
+#'              exists.  If the user has not specified a data type, the 
 #'              default is returned.
 #' @details     Currently the data type must be one of "csv" or "json", this 
-#'              is a paramaterized value, but those paramaters are not 
+#'              is a parameterized value, but those parameters are not 
 #'              available to the user as this function is not exported, and
 #'              no arguments are passed along to this function.
 #'              
@@ -28,7 +28,7 @@
 #'                  "resource\4334-bgaj"
 #'                  "The-Actual-Resource-Name\4334-bgaj.json"
 #'                  "Complete-Garbage\4334-bgaj.json"
-#'              In the event that the trailing .[datatype] is invlalid, csv is 
+#'              In the event that the trailing .[datatype] is invalid, csv is 
 #'              used instead
 #'                  "4334-bgaj.csv_xjson" would be returned as "csv"
 #'              
