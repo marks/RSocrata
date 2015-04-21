@@ -33,7 +33,7 @@ read.socrata <- function(url = NULL,
     if(!is.null(url)){
         urlParsed <- httr::parse_url(url)
         ## Standardize the path component
-        urlParsed$path <- getResourcePath(urlParsed$path)
+        urlParsed$path <- getResourcePath(urlParsed$path)$resourcePath
     } else {
         ## Validate and extract components, and build httr url object
         urlParsed <- getUrl(hostname, resourcePath, query)
