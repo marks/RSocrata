@@ -1,8 +1,10 @@
 
 
-insertToken <- function(query, 
-                        apptoken = NULL, 
-                        urlParsed) {
+insertToken <- function(urlParsed,
+                        apptoken = NULL) {
+    
+    ## Extract just the query from the URL
+    query <- urlParsed[["query"]]
     
     if(!is.null(apptoken)){
         ## If there is no query at all, create a base

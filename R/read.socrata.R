@@ -38,10 +38,14 @@ read.socrata <- function(url = NULL,
         ## Validate and extract components, and build httr url object
         urlParsed <- getUrl(hostname, resourcePath, query)
     }
-    ## Insert token into query part of url
-    urlParsed$query <- insertToken(query = urlParsed$query,
-                                   apptoken = apptoken,
-                                   urlParsed = urlParsed)
+    ## Sanatize query part of parsed url
+    queryResults <- validateUrlQuery(urlParsed,
+                                     apptoken,
+                                     keyfield)
+    urlParsed$query <- queryResults$query
+    rowLimit <- queryResults$rowLimit
+    keyfield <- queryResults$keyfield
+    
     ## Get the mimeType from the input
     mimeType <- getResourcePath(urlParsed$path)$mimeType
     ## Check url for minimum completeness
@@ -51,19 +55,9 @@ read.socrata <- function(url = NULL,
     ## Set up for request pagnation
     ##--------------------------------------------------------------------------
     ## Get row count and calculate number of pages
-    totalRows <- getQueryRowCount(urlParsed, mimeType)
-    ## Calculate total requests    
+    totalRows <- getQueryRowCount(urlParsed, mimeType, rowLimit)
+    ## Calculate total requests
     totalRequests <- trunc(totalRows / pagesize) + 1
-    ## Rely on constructed limit argument, so remove any previous limit
-    ## specification from query (it's interger(0) if no limit arg present)
-    limitArg <- grep("\\$limit", names(urlParsed$query), ignore.case = TRUE)
-    if(length(limitArg) > 0){
-        urlParsed[["query"]][[limitArg]] <- NULL
-    }
-    ## If there is nothing in the query then set the query of the url to NULL
-    if(length(urlParsed[["query"]]) == 0){
-        urlParsed[["query"]] <- NULL
-    }
     ## Get column names from the views resource path
     colInfo <- getColumnInfo(urlParsed)
     ## Get "urlFinal" which is actually several URLs that have the 
@@ -118,8 +112,13 @@ read.socrata <- function(url = NULL,
     result <- data.frame(resultContent, stringsAsFactors = FALSE)
     
     ## Convert data types for result
-    numberColumns <- which(colInfo$renderTypeName == "number")
-    dateColumns <- which(colInfo$renderTypeName == "calendar_date")
+    if(mimeType == "json"){
+        numberColumns <- which(colInfo$renderTypeName_fieldName == "number")
+        dateColumns <- which(colInfo$renderTypeName_fieldName == "calendar_date")
+    } else {
+        numberColumns <- which(colInfo$renderTypeName == "number")
+        dateColumns <- which(colInfo$renderTypeName == "calendar_date")
+    }
     for(j in numberColumns){
         cat("Converting ", which(j==numberColumns), "th column of ", 
             length(numberColumns), " numeric columns\n")
