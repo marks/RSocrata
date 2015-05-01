@@ -71,7 +71,7 @@ read.socrata <- function(url = NULL,
         require(parallel)
         cl <- makeCluster(detectCores())
         resultRaw <- parLapply(cl, urlFinal, httr::GET)
-        stopCluster(cl)
+        # stopCluster(cl)
     } else {
         ## The subsequent code is equivalent to this:
         # resultRaw <- lapply(urlFinal, httr::GET)
@@ -91,13 +91,20 @@ read.socrata <- function(url = NULL,
     }
     
     ## Extract content
-    resultContent <- list()
-    for(i in 1:length(resultRaw)){
-        cat("httr::content call for request ", i, " of ", totalRequests, "\n")
-        #resultRaw[[i]] <- httr::content(resultRaw[[i]])
-        print(system.time(
-            resultContent[[i]] <- httr::content(resultRaw[[i]])
-        ))
+    if(useCluster){
+        # require(parallel)
+        # cl <- makeCluster(detectCores())
+        resultContent <- parLapply(cl, resultRaw, httr::content)
+        stopCluster(cl)
+    } else {
+        resultContent <- list()
+        for(i in 1:length(resultRaw)){
+            cat("httr::content call for request ", i, " of ", totalRequests, "\n")
+            #resultRaw[[i]] <- httr::content(resultRaw[[i]])
+            print(system.time(
+                resultContent[[i]] <- httr::content(resultRaw[[i]])
+            ))
+        }
     }
     
     ## Combine content
